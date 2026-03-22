@@ -7,7 +7,7 @@ Edukacyjny projekt lokalnego blockchaina stworzony w języku Python, wykorzystuj
 ## Spis treści
 * [O projekcie](#simpleBlockchain)
 * [Technologie](#technologie)
-* [Funkcjonalności](#funkcjonalnosci)
+* [Funkcjonalności](#funkcjonalności)
 * [Struktury danych](#struktury-danych)
 
 ---
