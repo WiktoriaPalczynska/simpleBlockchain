@@ -50,11 +50,10 @@ class Block:
         except TypeError as e:
             raise ValueError(f"Błąd serializacji JSON: {e}")
 
-    def compute_hash(self):
-        """Tworzenie wartosci hasha (SHA-256) po serializacji całego bloku."""
+    def calculate_hash(self) -> str:
+        """Zwraca obliczona wartosc hasha (SHA-256) dla obecnego stanu, nie modyfikując obiektu."""
         canonical = self.to_canonical_json(include_signature=True)
-        self.hash = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-        return self.hash
+        return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 
     def get_signing_data(self):
         try:

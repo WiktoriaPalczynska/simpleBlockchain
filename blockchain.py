@@ -20,7 +20,7 @@ class PoSBlockchainCoinAge:
     def create_genesis_block(self):
         genesis_block = Block(0, [], time.time(), previous_hash="0", validator="genesis")
         genesis_block.signature = b"genesis_signature"
-        genesis_block.hash = genesis_block.compute_hash()
+        genesis_block.hash = genesis_block.calculate_hash()
         self.chain.append(genesis_block)
 
     def get_last_block(self):
@@ -76,7 +76,7 @@ class PoSBlockchainCoinAge:
         if not validators:
             raise Exception("Brak zarejestrowanych walidatorów!")
         for v in validators:
-            coin_age = min(current_time - v.last_validated_time, max_coin_age)
+            coin_age = min(current_time - v.last_validated_time, max_coin_age) + 0.001
             weights.append(v.stake * coin_age)
 
         total_weight = sum(weights)
@@ -114,10 +114,15 @@ class PoSBlockchainCoinAge:
         #podpisanie i wyliczenie hash
         signing_string = new_block.get_signing_data()
         new_block.signature = selected_validator.sign_data(signing_string)
-        new_block.hash = new_block.compute_hash()
+        new_block.hash = new_block.calculate_hash()
 
         self.chain.append(new_block)
-        self.unconfirmed_transactions.clear() #resetujemy liste transakcji
+
+        #aktualizacja sald i czyszczenie pamięci podręcznej (mempoolu)
+        self.unconfirmed_transactions = []
+        for tx in valid_transactions:
+            self.balances[tx.sender] -= tx.amount
+            self.balances[tx.recipient] = self.balances.get(tx.recipient, 0) + tx.amount
 
         return new_block
 
@@ -132,15 +137,17 @@ class PoSBlockchainCoinAge:
             current = self.chain[i]
             previous = self.chain[i - 1]
 
+            #spojnosc hasha łacznie z podpisem
+            original_hash = current.hash
+            recalculated_hash = current.calculate_hash()
+
+            if original_hash != recalculated_hash:
+                logging.error(f"Block {current.index}: invalid")
+                return False
+
             #weryfikacja powiazania hashy
             if current.previous_hash != previous.hash:
                 logging.error(f"Block {current.index}: invalid previous_hash")
-                return False
-
-            #spojnosc hasha łacznie z podpisem
-            recalculated_hash = current.compute_hash()
-            if current.hash != recalculated_hash: #sprawdzenie hasha po walidacji poprzedniego
-                logging.error(f"Block {current.index}: invalid hash (expected {recalculated_hash})")
                 return False
 
             #weryfikacja podpisu
